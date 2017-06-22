@@ -1,0 +1,93 @@
+---
+title: "Guinea Pig Tooth Growth under different Supplements"
+subtitle: "Statistical Analysis of Experiment Results"
+author: "Polina Sklyarevsky"
+output: pdf_document
+---
+
+# Synopsis
+This report shows statistical analysis of Guinea Pig toth growth experiment. In the experiment, the animals have been exposed to different dosages of two kings od food supplements. The analysis shows that Orange Juice has been more effective in accelerating tooth growth at most dosages than the other supplement. This hypothesis have been statisticaly tested against a null hypothesis (of no difference between the two supplements in terms of tooth length), and found to be true.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+# check dependencies
+if (!require(datasets)){
+        install.packages("datasets")
+        require(datasets)
+}
+
+if (!require(data.table)){
+        install.packages("data.table")
+        require(data.table)
+}
+
+if (!require(ggplot2)){
+        install.packages("ggplot2")
+        require(ggplot2)
+}
+
+```
+
+
+# Tooth Growh data
+
+## Overview
+
+```{r ToothGrowth}
+head(ToothGrowth)
+```
+
+## Descriptive Statistics
+```{r summary}
+summary(ToothGrowth)
+```
+
+## Comparison of Average Tooth Length by Supplement and Dosage
+
+```{r average, include=FALSE}
+tg <- as.data.table(ToothGrowth)
+setkey(tg, "len")
+tg[, avg := mean(len), by = .(supp,dose)]
+```
+```{r new_dt}
+d <- unique(tg[,.(supp, dose, avg)][order(-avg)])
+
+print(d)
+```
+
+```{r descriptive plot}
+qplot(x = dose, y = avg, data = d,  colour = supp, geom = "line", main = , xlab = "Dosage of Supplement", ylab = "Average Tooth Length by Supplement") + geom_point()
+```
+
+*Figure 1*: Thus figure shows a trend: as dosage increases, averge tooth length also increases. This is true of both supplements. The graph also shows that Orange Juice (OJ) is more effective, up to the highest dosage (where VC is actually higher, but not by much). 
+
+Perhaps tooth grows converges above dosage of 2.0, this is not known from data. What is known is that for dosages 0.5 to 1.0, Orange Juice supplement is more effective than VC.
+
+## Hypothesis Testing
+
+A t-test is performed to test difference in tooth length between the two supplement groups, in dosages 0.5 up to 1.5.
+
+H0: average length with OJ - average length with VC = 0, meaning that there is no difference between supplements in terms of tooth growth.
+
+H1: average length with OJ - average length with VC > 0, as can be seen in the graph.
+
+At 95% confidence level we can reject H0 (p < 0.01), of no difference between tooth length between supplement groups.
+This test assumes normal distribution of the underlying data.
+
+
+# Appendix
+
+## Code
+All code can be found on [Github](https://github.com/polinas123/statisticalInference)
+
+## Tests
+
+```{r hypothesis_test}
+setkey(d, "supp", "dose")
+setkey(tg, "supp", "dose")
+
+t.test(x = tg[.("OJ", range(0.5,1.0)), len], y = tg[.("VC", range(0.5,1.0)), len] , alternative = "greater", mu = 0, var.equal = F)
+```
+
+
